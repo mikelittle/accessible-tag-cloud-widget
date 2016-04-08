@@ -435,16 +435,16 @@ function atc_wp_generate_tag_cloud( $tags, $args = '' ) {
 		$real_count = $real_counts[ $key ];
 
 		if ( $translate_nooped_plural ) {
-			$title = sprintf( translate_nooped_plural( $translate_nooped_plural, $real_count ), number_format_i18n( $real_count ) );
+			$formatted_count = sprintf( translate_nooped_plural( $translate_nooped_plural, $real_count ), number_format_i18n( $real_count ) );
 		} else {
-			$title = call_user_func( $args['topic_count_text_callback'], $real_count, $tag, $args );
+			$formatted_count = call_user_func( $args['topic_count_text_callback'], $real_count, $tag, $args );
 		}
 
 		$tags_data[] = array(
 			'id'         => $tag_id,
 			'url'        => '#' != $tag->link ? $tag->link : '#',
 			'name'	     => $tag->name,
-			'title'      => $title,
+			'formatted_count' => $formatted_count,
 			'slug'       => $tag->slug,
 			'real_count' => $real_count,
 			'class'	     => 'tag-link-' . $tag_id,
@@ -466,7 +466,10 @@ function atc_wp_generate_tag_cloud( $tags, $args = '' ) {
 	// NOTE: Modified
 	// generate the output links array
 	foreach ( $tags_data as $key => $tag_data ) {
-		$a[] = "<a href='" . esc_url( $tag_data['url'] ) . "' class='" . esc_attr( $tag_data['class'] ) . "' title='' style='font-size: " . esc_attr( str_replace( ',', '.', $tag_data['font_size'] ) . $args['unit'] ) . ";'><span class='screen-reader-text'>" . esc_attr( $tag_data['title'] ) . "</span>" . esc_html( $tag_data['name'] ) . "</a>";
+		$a[] = "<a href='" . esc_url( $tag_data['url'] ) . "' class='" . esc_attr( $tag_data['class'] ) . "'><span style='font-size: " .
+			   esc_attr( str_replace( ',', '.', $tag_data['font_size'] ) . $args['unit'] ) . ";'>" .
+			   esc_html( $tag_data['name'] ) . "</span>\n<span class='screen-reader-text'>" .
+			   esc_attr( $tag_data['formatted_count'] ) . "</span></a>";
 	}
 
 	switch ( $args['format'] ) {
