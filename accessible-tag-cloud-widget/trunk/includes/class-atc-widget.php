@@ -119,6 +119,11 @@ class Atc_Widget {
 		 */
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'public/class-atc-widget-public.php';
 
+		/**
+		 * The class responsible for defining the accessible widget.
+		 */
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-atc-widget-tag-cloud.php';
+		
 		$this->loader = new Atc_Widget_Loader();
 
 	}
@@ -170,6 +175,9 @@ class Atc_Widget {
 		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_styles' );
 		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_scripts' );
 
+		$this->loader->add_action( 'widgets_init', $plugin_public, 'register_widget' );
+				
+
 	}
 
 	/**
@@ -213,3 +221,292 @@ class Atc_Widget {
 	}
 
 }
+
+/**
+ * Display tag cloud.
+ *
+ * The text size is set by the 'smallest' and 'largest' arguments, which will
+ * use the 'unit' argument value for the CSS text size unit. The 'format'
+ * argument can be 'flat' (default), 'list', or 'array'. The flat value for the
+ * 'format' argument will separate tags with spaces. The list value for the
+ * 'format' argument will format the tags in a UL HTML list. The array value for
+ * the 'format' argument will return in PHP array type format.
+ *
+ * The 'orderby' argument will accept 'name' or 'count' and defaults to 'name'.
+ * The 'order' is the direction to sort, defaults to 'ASC' and can be 'DESC'.
+ *
+ * The 'number' argument is how many tags to return. By default, the limit will
+ * be to return the top 45 tags in the tag cloud list.
+ *
+ * The 'topic_count_text' argument is a nooped plural from _n_noop() to generate the
+ * text for the tooltip of the tag link.
+ *
+ * The 'topic_count_text_callback' argument is a function, which given the count
+ * of the posts with that tag returns a text for the tooltip of the tag link.
+ *
+ * The 'post_type' argument is used only when 'link' is set to 'edit'. It determines the post_type
+ * passed to edit.php for the popular tags edit links.
+ *
+ * The 'exclude' and 'include' arguments are used for the {@link get_tags()}
+ * function. Only one should be used, because only one will be used and the
+ * other ignored, if they are both set.
+ *
+ * @since 2.3.0
+ *
+ * @param array|string|null $args Optional. Override default arguments.
+ * @return void|array Generated tag cloud, only if no failures and 'array' is set for the 'format' argument.
+ *                    Otherwise, this function outputs the tag cloud.
+ */
+function atc_wp_tag_cloud( $args = '' ) {
+	$defaults = array(
+		'smallest' => 8, 'largest' => 22, 'unit' => 'pt', 'number' => 45,
+		'format' => 'flat', 'separator' => "\n", 'orderby' => 'name', 'order' => 'ASC',
+		'exclude' => '', 'include' => '', 'link' => 'view', 'taxonomy' => 'post_tag', 'post_type' => '', 'echo' => true
+	);
+	$args = wp_parse_args( $args, $defaults );
+
+	$tags = get_terms( $args['taxonomy'], array_merge( $args, array( 'orderby' => 'count', 'order' => 'DESC' ) ) ); // Always query top tags
+
+	if ( empty( $tags ) || is_wp_error( $tags ) )
+		return;
+
+	foreach ( $tags as $key => $tag ) {
+		if ( 'edit' == $args['link'] )
+			$link = get_edit_term_link( $tag->term_id, $tag->taxonomy, $args['post_type'] );
+		else
+			$link = get_term_link( intval($tag->term_id), $tag->taxonomy );
+		if ( is_wp_error( $link ) )
+			return;
+
+		$tags[ $key ]->link = $link;
+		$tags[ $key ]->id = $tag->term_id;
+	}
+
+	// NOTE: Modified
+	$return = atc_wp_generate_tag_cloud( $tags, $args ); // Here's where those top tags get sorted according to $args
+
+	/**
+	 * Filter the tag cloud output.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param string $return HTML output of the tag cloud.
+	 * @param array  $args   An array of tag cloud arguments.
+	 */
+	$return = apply_filters( 'wp_tag_cloud', $return, $args );
+
+	if ( 'array' == $args['format'] || empty($args['echo']) )
+		return $return;
+
+	echo $return;
+}
+
+
+
+
+
+/**
+ * Generates a tag cloud (heatmap) from provided data.
+ *
+ * The text size is set by the 'smallest' and 'largest' arguments, which will
+ * use the 'unit' argument value for the CSS text size unit. The 'format'
+ * argument can be 'flat' (default), 'list', or 'array'. The flat value for the
+ * 'format' argument will separate tags with spaces. The list value for the
+ * 'format' argument will format the tags in a UL HTML list. The array value for
+ * the 'format' argument will return in PHP array type format.
+ *
+ * The 'tag_cloud_sort' filter allows you to override the sorting.
+ * Passed to the filter: $tags array and $args array, has to return the $tags array
+ * after sorting it.
+ *
+ * The 'orderby' argument will accept 'name' or 'count' and defaults to 'name'.
+ * The 'order' is the direction to sort, defaults to 'ASC' and can be 'DESC' or
+ * 'RAND'.
+ *
+ * The 'number' argument is how many tags to return. By default, the limit will
+ * be to return the entire tag cloud list.
+ *
+ * The 'topic_count_text' argument is a nooped plural from _n_noop() to generate the
+ * text for the tooltip of the tag link.
+ *
+ * The 'topic_count_text_callback' argument is a function, which given the count
+ * of the posts with that tag returns a text for the tooltip of the tag link.
+ *
+ * @todo Complete functionality.
+ * @since 2.3.0
+ *
+ * @param array $tags List of tags.
+ * @param string|array $args Optional, override default arguments.
+ * @return string|array Tag cloud as a string or an array, depending on 'format' argument.
+ */
+function atc_wp_generate_tag_cloud( $tags, $args = '' ) {
+	$defaults = array(
+		'smallest' => 8, 'largest' => 22, 'unit' => 'pt', 'number' => 0,
+		'format' => 'flat', 'separator' => "\n", 'orderby' => 'name', 'order' => 'ASC',
+		'topic_count_text' => null, 'topic_count_text_callback' => null,
+		'topic_count_scale_callback' => 'default_topic_count_scale', 'filter' => 1,
+	);
+
+	$args = wp_parse_args( $args, $defaults );
+
+	$return = ( 'array' === $args['format'] ) ? array() : '';
+
+	if ( empty( $tags ) ) {
+		return $return;
+	}
+
+	// Juggle topic count tooltips:
+	if ( isset( $args['topic_count_text'] ) ) {
+		// First look for nooped plural support via topic_count_text.
+		$translate_nooped_plural = $args['topic_count_text'];
+	} elseif ( ! empty( $args['topic_count_text_callback'] ) ) {
+		// Look for the alternative callback style. Ignore the previous default.
+		if ( $args['topic_count_text_callback'] === 'default_topic_count_text' ) {
+			$translate_nooped_plural = _n_noop( '%s topic', '%s topics' );
+		} else {
+			$translate_nooped_plural = false;
+		}
+	} elseif ( isset( $args['single_text'] ) && isset( $args['multiple_text'] ) ) {
+		// If no callback exists, look for the old-style single_text and multiple_text arguments.
+		$translate_nooped_plural = _n_noop( $args['single_text'], $args['multiple_text'] );
+	} else {
+		// This is the default for when no callback, plural, or argument is passed in.
+		$translate_nooped_plural = _n_noop( '%s topic', '%s topics' );
+	}
+
+	/**
+	 * Filter how the items in a tag cloud are sorted.
+	 *
+	 * @since 2.8.0
+	 *
+	 * @param array $tags Ordered array of terms.
+	 * @param array $args An array of tag cloud arguments.
+	 */
+	$tags_sorted = apply_filters( 'tag_cloud_sort', $tags, $args );
+	if ( empty( $tags_sorted ) ) {
+		return $return;
+	}
+
+	if ( $tags_sorted !== $tags ) {
+		$tags = $tags_sorted;
+		unset( $tags_sorted );
+	} else {
+		if ( 'RAND' === $args['order'] ) {
+			shuffle( $tags );
+		} else {
+			// SQL cannot save you; this is a second (potentially different) sort on a subset of data.
+			if ( 'name' === $args['orderby'] ) {
+				uasort( $tags, '_wp_object_name_sort_cb' );
+			} else {
+				uasort( $tags, '_wp_object_count_sort_cb' );
+			}
+
+			if ( 'DESC' === $args['order'] ) {
+				$tags = array_reverse( $tags, true );
+			}
+		}
+	}
+
+	if ( $args['number'] > 0 )
+		$tags = array_slice( $tags, 0, $args['number'] );
+
+	$counts = array();
+	$real_counts = array(); // For the alt tag
+	foreach ( (array) $tags as $key => $tag ) {
+		$real_counts[ $key ] = $tag->count;
+		$counts[ $key ] = call_user_func( $args['topic_count_scale_callback'], $tag->count );
+	}
+
+	$min_count = min( $counts );
+	$spread = max( $counts ) - $min_count;
+	if ( $spread <= 0 )
+		$spread = 1;
+	$font_spread = $args['largest'] - $args['smallest'];
+	if ( $font_spread < 0 )
+		$font_spread = 1;
+	$font_step = $font_spread / $spread;
+
+	// Assemble the data that will be used to generate the tag cloud markup.
+	$tags_data = array();
+	foreach ( $tags as $key => $tag ) {
+		$tag_id = isset( $tag->id ) ? $tag->id : $key;
+
+		$count = $counts[ $key ];
+		$real_count = $real_counts[ $key ];
+
+		if ( $translate_nooped_plural ) {
+			$title = sprintf( translate_nooped_plural( $translate_nooped_plural, $real_count ), number_format_i18n( $real_count ) );
+		} else {
+			$title = call_user_func( $args['topic_count_text_callback'], $real_count, $tag, $args );
+		}
+
+		$tags_data[] = array(
+			'id'         => $tag_id,
+			'url'        => '#' != $tag->link ? $tag->link : '#',
+			'name'	     => $tag->name,
+			'title'      => $title,
+			'slug'       => $tag->slug,
+			'real_count' => $real_count,
+			'class'	     => 'tag-link-' . $tag_id,
+			'font_size'  => $args['smallest'] + ( $count - $min_count ) * $font_step,
+		);
+	}
+
+	/**
+	 * Filter the data used to generate the tag cloud.
+	 *
+	 * @since 4.3.0
+	 *
+	 * @param array $tags_data An array of term data for term used to generate the tag cloud.
+	 */
+	$tags_data = apply_filters( 'wp_generate_tag_cloud_data', $tags_data );
+
+	$a = array();
+
+	// NOTE: Modified
+	// generate the output links array
+	foreach ( $tags_data as $key => $tag_data ) {
+		$a[] = "<a href='" . esc_url( $tag_data['url'] ) . "' class='" . esc_attr( $tag_data['class'] ) . "' title='' style='font-size: " . esc_attr( str_replace( ',', '.', $tag_data['font_size'] ) . $args['unit'] ) . ";'><span class='screen-reader-text'>" . esc_attr( $tag_data['title'] ) . "</span>" . esc_html( $tag_data['name'] ) . "</a>";
+	}
+
+	switch ( $args['format'] ) {
+		case 'array' :
+			$return =& $a;
+			break;
+		case 'list' :
+			$return = "<ul class='wp-tag-cloud'>\n\t<li>";
+			$return .= join( "</li>\n\t<li>", $a );
+			$return .= "</li>\n</ul>\n";
+			break;
+		default :
+			$return = join( $args['separator'], $a );
+			break;
+	}
+
+	if ( $args['filter'] ) {
+		/**
+		 * Filter the generated output of a tag cloud.
+		 *
+		 * The filter is only evaluated if a true value is passed
+		 * to the $filter argument in wp_generate_tag_cloud().
+		 *
+		 * @since 2.3.0
+		 *
+		 * @see wp_generate_tag_cloud()
+		 *
+		 * @param array|string $return String containing the generated HTML tag cloud output
+		 *                             or an array of tag links if the 'format' argument
+		 *                             equals 'array'.
+		 * @param array        $tags   An array of terms used in the tag cloud.
+		 * @param array        $args   An array of wp_generate_tag_cloud() arguments.
+		 */
+		return apply_filters( 'wp_generate_tag_cloud', $return, $tags, $args );
+	}
+
+	else
+		return $return;
+}
+
+
+
+

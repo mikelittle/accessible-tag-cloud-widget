@@ -100,4 +100,8 @@ class Atc_Widget_Public {
 
 	}
 
+	public function register_widget() {
+		register_widget( 'ATC_Tag_Cloud' );
+	}
+
 }
