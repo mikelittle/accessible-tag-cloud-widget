@@ -12,6 +12,36 @@ Here is a short description of the plugin.  This should be no more than 150 char
 
 == Description ==
 
+Example change to Twenty Sizteen call
+
+/**
+ * Modifies tag cloud widget arguments to have all tags in the widget same font size.
+ *
+ * @since Twenty Sixteen 1.1
+ *
+ * @param array $args Arguments for tag cloud widget.
+ * @return array A new modified arguments.
+ */
+function twentysixteen_widget_tag_cloud_args( $args ) {
+	$args['smallest'] = 1;
+	$args['largest'] = 3;
+	$args['unit'] = 'em';
+	$args['number'] = 0;
+	$args['format'] = 'list';
+	$args['separator'] = "\n";
+	$args['orderby'] = 'name';
+	$args['order'] = 'ASC';
+	$args['topic_count_text'] = null;
+	$args['topic_count_text_callback'] = null;
+	$args['topic_count_scale_callback'] = 'default_topic_count_scale';
+	$args['filter'] = 1;
+	return $args;
+}
+add_filter( 'widget_tag_cloud_args', 'twentysixteen_widget_tag_cloud_args' );
+
+
+
+
 This is the long description.  No limit, and you can use Markdown (as well as in the following sections).
 
 For backwards compatibility, if this section is missing, the full length of the short description will be used, and
