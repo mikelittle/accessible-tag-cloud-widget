@@ -27,7 +27,7 @@ class ATC_Tag_Cloud extends WP_Widget {
 			'description' => __( 'An accessible cloud of your most used tags.' ),
 			'customize_selective_refresh' => true,
 		);
-		parent::__construct( 'atc_tag_cloud', __( 'Accessible Tag Cloud Widget' ), $widget_ops );
+		parent::__construct( 'atc_tag_cloud', __( 'Accessible Tag Cloud' ), $widget_ops );
 	}
 
 	/**
@@ -69,6 +69,10 @@ class ATC_Tag_Cloud extends WP_Widget {
 		$tag_cloud = atc_wp_tag_cloud( apply_filters( 'widget_tag_cloud_args', array(
 			'taxonomy' => $current_taxonomy,
 			'echo' => false,
+			'smallest' => 1,
+			'largest' => 3,
+			'unit' => 'em',
+			'format' => 'list',
 		) ) );
 
 		if ( empty( $tag_cloud ) ) {

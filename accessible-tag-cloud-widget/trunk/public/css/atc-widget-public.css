@@ -46,40 +46,8 @@ ul.wp-tag-cloud {
 	margin: 0;
 	padding: 0;
 }
+
 ul.wp-tag-cloud li {
 	display: inline-block;
 	position: relative;
-}
-.tag-cloud-link {
-	position:relative;
-}
-.tag-cloud-link .screen-reader-text {
-	clip:     rect( 1px, 1px, 1px, 1px );
-	position: absolute !important;
-	height:   1px;
-	width:    1px;
-	overflow: hidden;
-	font-size: 0.8em;
-	background:    #eee;
-	color:         black;
-	border-radius: 3px;
-	border:        1px solid #ddd;
-	padding:       0.3em;
-	line-height:   1;
-	z-index:       99;
-	opacity:       0;
-	transition:    0.5s ease-in-out opacity;
-}
-a:focus.tag-cloud-link .screen-reader-text,
-a:hover.tag-cloud-link .screen-reader-text {
-	clip:        auto !important;
-	display:     block;
-	height:      auto;
-	left:        0;
-	top:         100%;
-	width:       auto;
-	white-space: nowrap;
-	left:        50%;
-	transform:   translateX( -50% );
-	opacity:     1;
 }

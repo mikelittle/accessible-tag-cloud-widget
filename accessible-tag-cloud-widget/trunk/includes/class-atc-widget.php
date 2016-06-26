@@ -468,12 +468,18 @@ function atc_wp_generate_tag_cloud( $tags, $args = '' ) {
 		// No visual sizing or screen reader count needed.
 		foreach ( $tags_data as $key => $tag_data ) {
 			$class = $tag_data['class'] . ' tag-link-position-' . ( $key + 1 );
-			$a[] = "<a href='" . esc_url( $tag_data['url'] ) . "' class='" . esc_attr( $class ) . "'>" . esc_html( $tag_data['name'] ) . "</a>";
+			$a[] = "<a href='" . esc_url( $tag_data['url'] ) . "' class='" .
+				   esc_attr( $class ) . "'>" .
+				   esc_html( $tag_data['name'] ) . "</a>";
 		}
 	} else {
 		foreach ( $tags_data as $key => $tag_data ) {
 		$class = $tag_data['class'] . ' tag-link-position-' . ( $key + 1 );
-			$a[] = "<a href='" . esc_url( $tag_data['url'] ) . "' class='" . esc_attr( $class ) . "'><span style='font-size: " .				   esc_attr( str_replace( ',', '.', $tag_data['font_size'] ) . $args['unit'] ) . ";'>" .				   esc_html( $tag_data['name'] ) . "</span>\n<span class='screen-reader-text'>" .				   esc_html( $tag_data['title'] ) . "</span></a>";
+			$a[] = "<a href='" . esc_url( $tag_data['url'] ) . "' class='" .
+				   esc_attr( $class ) . "' aria-label='" .
+				   esc_attr( $tag_data['name'] . " " . $tag_data['formatted_count'] ) . "' style='font-size: " .
+				   esc_attr( str_replace( ',', '.', $tag_data['font_size'] ) . $args['unit'] ) . ";'>" .
+				   esc_html( $tag_data['name'] ) . "</a>";
 		}
 	}
 
@@ -490,11 +496,6 @@ function atc_wp_generate_tag_cloud( $tags, $args = '' ) {
 			$return = join( $args['separator'], $a );
 			break;
 	}
-
-	/*
-	$accessibility_styles = '<style></style>';
-	$return = $accessibility_styles . $return;
-*/
 
 	if ( $args['filter'] ) {
 		/**
@@ -519,7 +520,4 @@ function atc_wp_generate_tag_cloud( $tags, $args = '' ) {
 	else
 		return $return;
 }
-
-
-
 
