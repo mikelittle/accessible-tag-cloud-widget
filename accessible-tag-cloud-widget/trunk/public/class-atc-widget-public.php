@@ -73,7 +73,9 @@ class Atc_Widget_Public {
 		 * class.
 		 */
 
-		wp_enqueue_style( $this->atc_widget, plugin_dir_url( __FILE__ ) . 'css/atc-widget-public.css', array(), $this->version, 'all' );
+		if ( apply_filters( 'atc_widget_include_css', true ) ) {
+			wp_enqueue_style( $this->atc_widget, plugin_dir_url( __FILE__ ) . 'css/atc-widget-public.css', array(), $this->version, 'all' );
+		}
 
 	}
 
