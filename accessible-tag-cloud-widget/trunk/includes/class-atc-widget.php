@@ -362,7 +362,7 @@ function atc_wp_generate_tag_cloud( $tags, $args = '' ) {
 	} elseif ( ! empty( $args['topic_count_text_callback'] ) ) {
 		// Look for the alternative callback style. Ignore the previous default.
 		if ( $args['topic_count_text_callback'] === 'default_topic_count_text' ) {
-			$translate_nooped_plural = _n_noop( '%s topic', '%s topics' );
+			$translate_nooped_plural = _n_noop( '%s item', '%s items' );
 		} else {
 			$translate_nooped_plural = false;
 		}
@@ -371,11 +371,11 @@ function atc_wp_generate_tag_cloud( $tags, $args = '' ) {
 		$translate_nooped_plural = _n_noop( $args['single_text'], $args['multiple_text'] );
 	} else {
 		// This is the default for when no callback, plural, or argument is passed in.
-		$translate_nooped_plural = _n_noop( '%s topic', '%s topics' );
+		$translate_nooped_plural = _n_noop( '%s item', '%s items' );
 	}
 
 	/**
-	 * Filter how the items in a tag cloud are sorted.
+	 * Filters how the items in a tag cloud are sorted.
 	 *
 	 * @since 2.8.0
 	 *
@@ -447,13 +447,13 @@ function atc_wp_generate_tag_cloud( $tags, $args = '' ) {
 			'formatted_count' => $formatted_count,
 			'slug'       => $tag->slug,
 			'real_count' => $real_count,
-			'class'	     => 'tag-link-' . $tag_id,
+			'class'	     => 'tag-cloud-link tag-link-' . $tag_id,
 			'font_size'  => $args['smallest'] + ( $count - $min_count ) * $font_step,
 		);
 	}
 
 	/**
-	 * Filter the data used to generate the tag cloud.
+	 * Filters the data used to generate the tag cloud.
 	 *
 	 * @since 4.3.0
 	 *
@@ -463,13 +463,18 @@ function atc_wp_generate_tag_cloud( $tags, $args = '' ) {
 
 	$a = array();
 
-	// NOTE: Modified
-	// generate the output links array
-	foreach ( $tags_data as $key => $tag_data ) {
-		$a[] = "<a href='" . esc_url( $tag_data['url'] ) . "' class='" . esc_attr( $tag_data['class'] ) . "'><span style='font-size: " .
-			   esc_attr( str_replace( ',', '.', $tag_data['font_size'] ) . $args['unit'] ) . ";'>" .
-			   esc_html( $tag_data['name'] ) . "</span>\n<span class='screen-reader-text'>" .
-			   esc_attr( $tag_data['formatted_count'] ) . "</span></a>";
+	// Generate the output links array.
+	if ( 0 == $args['largest'] - $args['smallest'] ) {
+		// No visual sizing or screen reader count needed.
+		foreach ( $tags_data as $key => $tag_data ) {
+			$class = $tag_data['class'] . ' tag-link-position-' . ( $key + 1 );
+			$a[] = "<a href='" . esc_url( $tag_data['url'] ) . "' class='" . esc_attr( $class ) . "'>" . esc_html( $tag_data['name'] ) . "</a>";
+		}
+	} else {
+		foreach ( $tags_data as $key => $tag_data ) {
+		$class = $tag_data['class'] . ' tag-link-position-' . ( $key + 1 );
+			$a[] = "<a href='" . esc_url( $tag_data['url'] ) . "' class='" . esc_attr( $class ) . "'><span style='font-size: " .				   esc_attr( str_replace( ',', '.', $tag_data['font_size'] ) . $args['unit'] ) . ";'>" .				   esc_html( $tag_data['name'] ) . "</span>\n<span class='screen-reader-text'>" .				   esc_html( $tag_data['title'] ) . "</span></a>";
+		}
 	}
 
 	switch ( $args['format'] ) {
@@ -486,9 +491,14 @@ function atc_wp_generate_tag_cloud( $tags, $args = '' ) {
 			break;
 	}
 
+	/*
+	$accessibility_styles = '<style></style>';
+	$return = $accessibility_styles . $return;
+*/
+
 	if ( $args['filter'] ) {
 		/**
-		 * Filter the generated output of a tag cloud.
+		 * Filters the generated output of a tag cloud.
 		 *
 		 * The filter is only evaluated if a true value is passed
 		 * to the $filter argument in wp_generate_tag_cloud().

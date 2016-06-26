@@ -23,8 +23,11 @@ class ATC_Tag_Cloud extends WP_Widget {
 	 * @access public
 	 */
 	public function __construct() {
-		$widget_ops = array( 'description' => __( "An accessible cloud of your most used tags.") );
-		parent::__construct('atc_tag_cloud', __('Accessible Tag Cloud Widget'), $widget_ops);
+		$widget_ops = array(
+			'description' => __( 'An accessible cloud of your most used tags.' ),
+			'customize_selective_refresh' => true,
+		);
+		parent::__construct( 'atc_tag_cloud', __( 'Accessible Tag Cloud Widget' ), $widget_ops );
 	}
 
 	/**
@@ -50,8 +53,10 @@ class ATC_Tag_Cloud extends WP_Widget {
 			}
 		}
 
+		$ariaLabel = $title . ' ' . __('list');
+
 		/**
-		 * Filter the taxonomy used in the Accessible Tag Cloud widget.
+		 * Filters the taxonomy used in the Accessible Tag Cloud widget.
 		 *
 		 * @since 2.8.0
 		 * @since 3.0.0 Added taxonomy drop-down.
@@ -63,7 +68,7 @@ class ATC_Tag_Cloud extends WP_Widget {
 		// NOTE - Hacked core here...
 		$tag_cloud = atc_wp_tag_cloud( apply_filters( 'widget_tag_cloud_args', array(
 			'taxonomy' => $current_taxonomy,
-			'echo' => false
+			'echo' => false,
 		) ) );
 
 		if ( empty( $tag_cloud ) ) {
@@ -78,7 +83,7 @@ class ATC_Tag_Cloud extends WP_Widget {
 			echo $args['before_title'] . $title . $args['after_title'];
 		}
 		// NOTE - Hacked core here...
-		echo '<div class="tagcloud" aria-label="' . esc_attr( $title ) . '">';
+		echo '<div class="wp-tag-cloud" aria-label="' . $ariaLabel . '">';
 
 		echo $tag_cloud;
 
@@ -99,7 +104,7 @@ class ATC_Tag_Cloud extends WP_Widget {
 	 */
 	public function update( $new_instance, $old_instance ) {
 		$instance = array();
-		$instance['title'] = sanitize_text_field( stripslashes( $new_instance['title'] ) );
+		$instance['title'] = sanitize_text_field( $new_instance['title'] );
 		$instance['taxonomy'] = stripslashes($new_instance['taxonomy']);
 		return $instance;
 	}
