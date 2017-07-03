@@ -40,6 +40,7 @@ function twentysixteen_widget_tag_cloud_args( $args ) {
 add_filter( 'widget_tag_cloud_args', 'twentysixteen_widget_tag_cloud_args' );
 
 
+The plugin includes enough CSS to style the tag cloud on your site. If you theme includes the appropriate CSS already, you can turn off the css using the 'atc_widget_include_css' filter. Simply return false.
 
 
 This is the long description.  No limit, and you can use Markdown (as well as in the following sections).
